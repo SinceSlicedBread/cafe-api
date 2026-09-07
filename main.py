@@ -88,7 +88,7 @@ def show_cafe(name):
     except NoResultFound:
         return jsonify(error={"Error": "No cafe by that name in the database."}), 404
 
-@app.route("/delete/<int:cafe_id>")
+@app.route("/delete/<int:cafe_id>", methods=["DELETE"])
 def remove_cafe(cafe_id):
     try:
         results = db.session.execute(db.Select(Cafe).where(Cafe.id == cafe_id))
@@ -99,17 +99,17 @@ def remove_cafe(cafe_id):
     except NoResultFound:
         return jsonify(message={"Error": "No cafe by that name in the database."}), 404
 
-@app.route("/update_price/<int:cafe_id>", methods=["GET","PATCH"])
+@app.route("/update_price/<int:cafe_id>", methods=["PATCH"])
 def update_price(cafe_id):
-    try:
-        results = db.session.execute(db.Select(Cafe).where(Cafe.id == cafe_id))
-        selected_cafe = results.scalars().one()
-        selected_cafe.price = request.args.get("price")
+    new_price = request.args.get("price")
+    cafe = db.session.get(entity=Cafe, ident=cafe_id)
+    if cafe:
+        cafe.coffee_price = new_price
         db.session.commit()
         return jsonify(message={
-            "Success": f"Coffee price for {selected_cafe.name} successfully change to {selected_cafe.price}."}), 200
-    except NoResultFound:
-        return jsonify(message={"Error": "No cafe by that id in the database."}), 404
+            "Success": f"Coffee price for {cafe.name} successfully change to {cafe.coffee_price}."}), 200
+    else:
+        return jsonify(error={"Error": "No cafe by that id in the database."}), 404
 
 if __name__ == '__main__':
     app.run()
