@@ -7,12 +7,15 @@ import random
 
 app = Flask(__name__)
 
+
 class Base(DeclarativeBase):
     pass
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cafes.db"
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
+
 
 class Cafe(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -30,8 +33,10 @@ class Cafe(db.Model):
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
+
 with app.app_context():
     db.create_all()
+
 
 @app.route("/")
 def home():
@@ -60,7 +65,7 @@ def has_wifi():
     return jsonify(wifi_cafes=[cafe.to_dict() for cafe in wifi_cafes])
 
 
-@app.route("/add")
+@app.route("/add", methods=["GET", "POST"])
 def add_cafe():
     new_cafe = Cafe(
         name=request.args.get("name"),
@@ -77,7 +82,9 @@ def add_cafe():
     db.session.add(new_cafe)
     db.session.commit()
     return jsonify(response={"Success": "New cafe successfully added!"})
-#http://127.0.0.1:5000/add?name=hi&map=test&img=test&loc=here&seats=5&toilet=True&wifi=True&sockets=True&calls=True&coffee_price=$4
+
+
+# http://127.0.0.1:5000/add?name=hi&map=test&img=test&loc=here&seats=5&toilet=True&wifi=True&sockets=True&calls=True&coffee_price=$4
 
 @app.route("/cafe/<name>")
 def show_cafe(name):
@@ -88,7 +95,8 @@ def show_cafe(name):
     except NoResultFound:
         return jsonify(error={"Error": "No cafe by that name in the database."}), 404
 
-@app.route("/delete/<int:cafe_id>")
+
+@app.route("/delete/<int:cafe_id>", methods=["DELETE"])
 def remove_cafe(cafe_id):
     try:
         results = db.session.execute(db.Select(Cafe).where(Cafe.id == cafe_id))
@@ -99,17 +107,17 @@ def remove_cafe(cafe_id):
     except NoResultFound:
         return jsonify(message={"Error": "No cafe by that name in the database."}), 404
 
-@app.route("/update_price/<int:cafe_id>", methods=["GET","PATCH"])
+
+@app.route("/update_price/<int:cafe_id>", methods=["PATCH"])
 def update_price(cafe_id):
-    try:
-        results = db.session.execute(db.Select(Cafe).where(Cafe.id == cafe_id))
-        selected_cafe = results.scalars().one()
-        selected_cafe.price = request.args.get("price")
+    new_price = request.args.get("price")
+    cafe = db.session.get(entity=Cafe, ident=cafe_id)
+    if cafe:
+        cafe.coffee_price = new_price
         db.session.commit()
         return jsonify(message={
-            "Success": f"Coffee price for {selected_cafe.name} successfully change to {selected_cafe.price}."}), 200
-    except NoResultFound:
-        return jsonify(message={"Error": "No cafe by that id in the database."}), 404
+            "Success": f"Coffee price for {cafe.name} successfully change to {cafe.coffee_price}."}), 200
+
 
 if __name__ == '__main__':
     app.run()
