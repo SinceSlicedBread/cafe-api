@@ -7,6 +7,7 @@ import random
 
 app = Flask(__name__)
 
+## https://documenter.getpostman.com/view/49674566/2sBYAxP991
 
 class Base(DeclarativeBase):
     pass
