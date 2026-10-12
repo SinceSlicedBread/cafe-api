@@ -10,9 +10,11 @@ app = Flask(__name__)
 class Base(DeclarativeBase):
     pass
 
+
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///cafes.db"
 db = SQLAlchemy(model_class=Base)
 db.init_app(app)
+
 
 class Cafe(db.Model):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -30,8 +32,10 @@ class Cafe(db.Model):
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
+
 with app.app_context():
     db.create_all()
+
 
 @app.route("/")
 def home():
@@ -60,7 +64,7 @@ def has_wifi():
     return jsonify(wifi_cafes=[cafe.to_dict() for cafe in wifi_cafes])
 
 
-@app.route("/add")
+@app.route("/add", methods=["GET", "POST"])
 def add_cafe():
     new_cafe = Cafe(
         name=request.args.get("name"),
@@ -77,7 +81,9 @@ def add_cafe():
     db.session.add(new_cafe)
     db.session.commit()
     return jsonify(response={"Success": "New cafe successfully added!"})
-#http://127.0.0.1:5000/add?name=hi&map=test&img=test&loc=here&seats=5&toilet=True&wifi=True&sockets=True&calls=True&coffee_price=$4
+
+
+# http://127.0.0.1:5000/add?name=hi&map=test&img=test&loc=here&seats=5&toilet=True&wifi=True&sockets=True&calls=True&coffee_price=$4
 
 @app.route("/cafe/<name>")
 def show_cafe(name):
@@ -87,6 +93,7 @@ def show_cafe(name):
         return jsonify(cafe=selected_cafe.to_dict())
     except NoResultFound:
         return jsonify(error={"Error": "No cafe by that name in the database."}), 404
+
 
 @app.route("/delete/<int:cafe_id>", methods=["DELETE"])
 def remove_cafe(cafe_id):
@@ -98,6 +105,7 @@ def remove_cafe(cafe_id):
         return jsonify(message={"Success": f"Cafe {selected_cafe.id} successfully removed."}), 200
     except NoResultFound:
         return jsonify(message={"Error": "No cafe by that name in the database."}), 404
+
 
 @app.route("/update_price/<int:cafe_id>", methods=["PATCH"])
 def update_price(cafe_id):
