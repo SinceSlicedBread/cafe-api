@@ -83,8 +83,6 @@ def add_cafe():
     return jsonify(response={"Success": "New cafe successfully added!"})
 
 
-# http://127.0.0.1:5000/add?name=hi&map=test&img=test&loc=here&seats=5&toilet=True&wifi=True&sockets=True&calls=True&coffee_price=$4
-
 @app.route("/cafe/<name>")
 def show_cafe(name):
     try:
